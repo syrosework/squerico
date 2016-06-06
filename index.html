@@ -2,42 +2,140 @@
 <html>
     <head>
         <meta charset="UTF-8" />
-        <title>hello pixi!</title>
+        <title>GlaDos's testing page</title>
         <script src="js/pixi.js"></script>
     </head>
     <body>
     
-    <script type="text/javascript">
+    <script src="js/Core.js"></script>
     
-        var renderer = PIXI.autoDetectRenderer(800, 600,{backgroundColor : 0x1099bb});
+    <script type="text/javascript">
+	
+	var DELAY_TURN_TIME = 10;
+	var DELAY_DRAW_TIME = 2;
+	var SQUARE_START_X = 50;
+	var SQUARE_START_Y = 50;
+	var SQUARE_END_X = SQUARE_START_X + a.m * SQUARE_SIZE;
+	var SQUARE_END_Y = SQUARE_START_Y + a.n * SQUARE_SIZE;
+	var SQUARE_SIZE = 48
+	
+	//**********************************************
+        var renderer = PIXI.autoDetectRenderer(850, 850,{backgroundColor : 0x1099bb});
         document.body.appendChild(renderer.view);
         
-        // create the root of the scene graph
         var stage = new PIXI.Container();
+        stage.interactive = true;
         
-        // create a texture from an image path
+        //**********************************************
+        
         var texture = PIXI.Texture.fromImage('idp.jpg');
-        
-        // create a new Sprite using the texture
         var logo = new PIXI.Sprite(texture);
         
-        // center the sprite's anchor point
         logo.anchor.x = 0.5;
         logo.anchor.y = 0.5;
         
-        // move the sprite to the center of the screen
         logo.position.x = 400;
         logo.position.y = 300;
         
-        stage.addChild(logo);
+        //**********************************************
         
-        // start animating
+        var basicText = new PIXI.Text("Pause");
+        var graphics = new PIXI.Graphics();
+        
+        var timerTurn = 0;
+        var timerDraw = 0;
+        var pause = false;
+        
+	basicText.x = 425;
+	basicText.y = 10;
+	
+	basicText.interactive = true;
+	
+	basicText.on('click', onPauseClick);
+	basicText.on('tap', onPauseClick);
+	
+	//**********************************************
+	
+	stage.addChild(basicText);
+	stage.addChild(logo);
+	
+	stage.on('click', onClick);
+	stage.on('tap', onClick);
+	
+	//**********************************************
+	
+	function onPauseClick(event) {
+		pause = !pause;
+	}
+	
+	function onClick(event) {
+		var p = event.data.getLocalPosition(this)
+		if (	p.x < SQUARE_START_X ||
+			p.y < SQUARE_START_Y ||
+			p.x > SQUARE_END_X ||
+			p.y > SQUARE_END_Y) 
+		    return;
+		
+		p.x -= SQUARE_START_X;
+		p.y -= SQUARE_START_Y;
+		
+		p.x /= SQUARE_SIZE;
+		p.y /= SQUARE_SIZE;
+		
+		var intX = Math.floor(p.x);
+		var intY = Math.floor(p.y);
+		
+		a.c[intY][intX] = 1 - a.c[intY][intX];
+	}
+	
+	//**********************************************
+	
         animate();
         function animate() {
-            requestAnimationFrame(animate);
-        
-            // render the container
-            renderer.render(stage);
+		if (!pause)
+			timerTurn++;
+		
+		timerDraw++;
+		
+		if (timerDraw >= DELAY_DRAW_TIME) {
+			timerDraw = 0;
+			
+			graphics = new PIXI.Graphics();
+			var curSquareId = 0;
+			
+			graphics.lineStyle(2, 0x0000FF, 1);
+			graphics.beginFill(0x000000, 1);
+			
+			for (var i = 0; i < a.m; i++)
+				for (var j = 0; j < a.n; j++) {
+					if (a.c[i][j] != curSquareId) {
+						curSquareId = a.c[i][j];
+						if (curSquareId == 0)
+							graphics.beginFill(0x000000, 1);
+						else
+							graphics.beginFill(0xFF700B, 1);
+					}
+					
+					graphics.drawRect(SQUARE_START_X + SQUARE_SIZE * j,
+					                  SQUARE_START_Y + SQUARE_SIZE * i,
+					                  SQUARE_SIZE,
+					                  SQUARE_SIZE);
+				}
+			
+			graphics.endFill();
+		}
+		
+		if (timerTurn >= DELAY_TURN_TIME) {
+			timerTurn = 0;
+			turnAutomaton(a);
+		}
+		
+		stage.addChild(graphics);
+		
+		requestAnimationFrame(animate);
+		renderer.render(stage);
+		
+		stage.removeChild(graphics);
         }
         
     </script>
